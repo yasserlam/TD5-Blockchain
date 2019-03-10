@@ -1,0 +1,30 @@
+
+mapping (address => bool) ERC20Basic;
+address public ownersCut;
+
+function airdropTokens(address _tokenAddress, uint _totalTokensToDistribute, uint _expirationTime){
+        require(!tokenBlacklist[_tokenAddress]);
+        require(!airdropperBlacklist[msg.sender]);
+        
+        ERC20Basic token = ERC20Basic(_tokenAddress);
+        require(token.balanceOf(msg.sender) >= _totalTokensToDistribute);
+        
+      
+        _totalTokensToDistribute = _totalTokensToDistribute.mul(10 ** uint256(token.decimals()));
+        
+      
+        uint tokensForOwner = _totalTokensToDistribute.mul(ownersCut).div(100);
+        _totalTokensToDistribute = _totalTokensToDistribute.sub(tokensForOwner);
+        
+       
+        TokenAirdropID memory taid = TokenAirdropID(_tokenAddress,airdroppedTokens[_tokenAddress].length);
+        TokenAirdrop memory ta = TokenAirdrop(_tokenAddress,airdroppedTokens[_tokenAddress].length,msg.sender,now,now+_expirationTime,_totalTokensToDistribute,_totalTokensToDistribute,userSignupCount);
+        airdroppedTokens[_tokenAddress].push(ta);
+        airdrops.push(taid);
+        
+  
+        require(token.transferFrom(msg.sender,this,_totalTokensToDistribute));
+        require(token.transferFrom(msg.sender,owner,tokensForOwner));
+        
+        E_AirdropSubmitted(_tokenAddress,ta.tokenOwner,ta.totalDropped,ta.airdropDate,ta.airdropExpirationDate);
+    }
